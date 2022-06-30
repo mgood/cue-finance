@@ -1,0 +1,7 @@
+https://cuelang.org/docs/usecases/generate/
+
+https://beancount.github.io/docs/beancount_language_syntax.html
+
+Could generate types from Go code?
+
+Convert between beancount, ledger formats to allow interaction with their tooling
