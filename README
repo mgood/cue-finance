@@ -5,3 +5,8 @@ https://beancount.github.io/docs/beancount_language_syntax.html
 Could generate types from Go code?
 
 Convert between beancount, ledger formats to allow interaction with their tooling
+
+beancount:
+use `cue` to export JSON, then can convert in Python
+
+what about beancount -> Cue?

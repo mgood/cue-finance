@@ -58,6 +58,8 @@ commodity: [ID=_]: {
 // YYYY-MM-DD [txn|Flag] [[Payee] Narration]
 //   [Flag] Account Amount [{Cost}] [@ Price]
 //   [Flag] Account Amount [{Cost}] [@ Price] ...
+// Or @@ for total cost
+// Assets:MyBank:Checking            -400.00 USD @@ 436.01 CAD
 // or with metadata:
 // YYYY-MM-DD [txn|Flag] [[Payee] Narration] [Key: Value] ... [Flag] Account Amount [{Cost}] [@ Price] [Key: Value] ... [Flag] Account Amount [{Cost}] [@ Price] [Key: Value] ... ...
 
@@ -65,6 +67,9 @@ tx: [Date=_]: [Narration=string]: {
   _date: Date & #Date,
   postings: [...#Posting]
 	// TODO posting shorthand to for a catch-all account
+	// might allow something like:
+  // { "Equity:Opening-Balances": _ },
+	// or another key that indicates a catch-all
 }
 
 // tx: {
