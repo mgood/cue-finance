@@ -20,7 +20,8 @@ tx: "2020-01-01": "Opening Balance for checking account": postings: [
 ]
 
 tx: "2020-01-02": "Opening Balance for checking account": postings: [
-	{"Assets:US:BofA:Checking": amount: USD: 2983.52},
-	{"Assets:US:BofA:Checking": amount: USD: 40 / 3},
-	{"Equity:Opening-Balances":              _},
+	{"Assets:US:BofA:Checking": amount: USD: 10},
+	{"Assets:US:BofA:Checking": amount: USD: 40 / 2},
+	// {"Equity:Opening-Balances":              _},
+	{"Equity:Opening-Balances": amount: USD: -40},
 ]

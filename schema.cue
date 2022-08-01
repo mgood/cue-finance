@@ -1,42 +1,50 @@
-// can have separate schemas for structure and semantic validation
-// structure would check basic types
-// semantics could compute balances
-// * for a tx, postings should sum to 0
-// * account balances can be computed by day which would match against balance assertions
-//   (though this would need to generate every day even if there were no transactions since we could have a balance assertion for a day in-between other txs)
-// check that accounts only contain the currencies they're supposed to
-// can we even validate stuff like commodities that are held with a cost basis?
-// check txs on an account are between the open/close dates
+import ( "list"
 
-// account heirarchy?
+	// can have separate schemas for structure and semantic validation
+	// structure would check basic types
+	// semantics could compute balances
+	// * for a tx, postings should sum to 0
+	// * account balances can be computed by day which would match against balance assertions
+	//   (though this would need to generate every day even if there were no transactions since we could have a balance assertion for a day in-between other txs)
+	// check that accounts only contain the currencies they're supposed to
+	// can we even validate stuff like commodities that are held with a cost basis?
+	// check txs on an account are between the open/close dates
 
-// https://beancount.github.io/docs/beancount_language_syntax.html#directives-1
-// https://beancount.github.io/docs/beancount_cheat_sheet.html
+	// account heirarchy?
 
-// currency enums?
+	// https://beancount.github.io/docs/beancount_language_syntax.html#directives-1
+	// https://beancount.github.io/docs/beancount_cheat_sheet.html
+
+	// currency enums?
+
+	// Functions:
+	// * exchanges between units: currency exhange or stocks
+	// * sum amounts of same currency
+	// * check for 0 balance
+)
 
 // YYYY-MM-DD open Account [ConstraintCurrency,...] ["BookingMethod"]
 // YYYY-MM-DD close Account
 account: [Name=string]: {
-  name: Name,
-	open: #Date
+	name:   Name
+	open:   #Date
 	close?: #Date
 	currencies: [...string] // TODO validate against commodity list?
-  booking_method: *"STRICT" | "NONE"
+	booking_method:         *"STRICT" | "NONE"
 }
 
 // it should be possible to create multiple entries that open and close the
 // account like in Beancount
 // Beancount also doesn't allow re-opening an account, so that's compatible here
 
-#Date: string & =~ "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
-#Currency: string & =~ "^[A-Z]+$"
+#Date:     string & =~"^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+#Currency: string & =~"^[A-Z]+$"
 
 // YYYY-MM-DD commodity Currency
 commodity: [ID=_]: {
-	_id: ID & #Currency
-	date: #Date | *"1900-01-01" // is this just for beancount syntax, any reason for it?
-	name?: string
+	_id:     ID & #Currency
+	date:    #Date | *"1900-01-01" // is this just for beancount syntax, any reason for it?
+	name?:   string
 	export?: string
 	// mainly to attach other metadata
 }
@@ -50,9 +58,10 @@ commodity: [ID=_]: {
 // https://cuelang.org/docs/tutorials/tour/references/aliases/
 
 #Posting: [Account=_]: {
-	amount: #Amount,
-	cost?: #Amount,
-	price?: #Amount,
+	account: Account
+	amount:  #Amount
+	cost?:   #Amount
+	price?:  #Amount
 }
 
 // YYYY-MM-DD [txn|Flag] [[Payee] Narration]
@@ -63,21 +72,72 @@ commodity: [ID=_]: {
 // or with metadata:
 // YYYY-MM-DD [txn|Flag] [[Payee] Narration] [Key: Value] ... [Flag] Account Amount [{Cost}] [@ Price] [Key: Value] ... [Flag] Account Amount [{Cost}] [@ Price] [Key: Value] ... ...
 
-tx: [Date=_]: [Narration=string]: {
-  _date: Date & #Date,
-  postings: [...#Posting]
-	// TODO posting shorthand to for a catch-all account
-	// might allow something like:
-  // { "Equity:Opening-Balances": _ },
-	// or another key that indicates a catch-all
+#HasKey: {
+	key: string
+	In="in": _
+	out: list.Contains([ for k, _ in In {k}], key)
 }
 
+#GroupValuesFunc: {
+	In="in": [...]
+
+	let keys = [ for x in In {for k, _ in x {k}}]
+	let uniq = {for k in keys {"\(k)": true}}
+	out: {
+		for k, _ in uniq {
+			"\(k)": [ for x in In if (#HasKey & {key: k, in: x}).out {
+				x[k]
+			}]
+		}
+	}
+}
+
+#ValueSumFunc: {
+	In="in": _
+
+	out: {
+		for ck, cv in In {
+			"\(ck)": list.Sum(cv)
+		}
+	}
+}
+
+#Transaction: {
+	_date: #Date
+	postings: [...#Posting]
+	// TODO posting shorthand to for a catch-all account
+	// might allow something like:
+	// { "Equity:Opening-Balances": _ },
+	// or another key that indicates a catch-all
+
+	accountTotals: {
+		for k, v in (#GroupValuesFunc & {in: postings}).out {
+			let amounts = [ for x, y in v {y.amount}]
+			let grouped = (#GroupValuesFunc & {in: amounts}).out
+			let sums = (#ValueSumFunc & {in: grouped}).out
+			"\(k)": sums
+		}
+	}
+	totals: (#ValueSumFunc & {
+		in: (#GroupValuesFunc & {
+			in: [ for k, v in accountTotals {v}]
+		}).out
+	}).out
+	// zeroBalance: {
+	//  for k,v in totals {
+	//   "\(k)": v & 0
+	//  }
+	// }
+}
+
+tx: [Date=_]: [Narration=string]: #Transaction & {_date: Date}
+
 // tx: {
-	// date: string,
-	// flag: string | *"*", // *(complete,default)|!(incomplete)
-	// payee?: string,
-	// narration: string,
-	// postings: [...#posting],
+// date: string,
+// flag: string | *"*", // *(complete,default)|!(incomplete)
+// payee?: string,
+// narration: string,
+// postings: [...#posting],
 // }
 // The Amount in “Postings” can also be an arithmetic expression using ( ) * / - + . For example,
 //   Assets:AccountsReceivable:John            ((40.00/3) + 5) USD
@@ -125,3 +185,5 @@ option: [string]: _
 // plugin ModuleName StringConfig
 
 // include Filename
+
+// Functions
