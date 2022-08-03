@@ -50,6 +50,19 @@ commodity: [ID=_]: {
 }
 
 #Amount: [Currency=_]: number
+
+// #AmountComputed: {
+	// In="in": #Amount
+	// let items = {
+	// 	for k,v in In {
+	// 		[k, v]
+	// 	}
+	// }
+	// _size:
+	// currency: items[0][0]
+	// units: items[0][0]
+// }
+
 // tuple?
 // #amount: [number, string]
 // or possible with a template?
@@ -60,8 +73,10 @@ commodity: [ID=_]: {
 #Posting: [Account=_]: {
 	account: Account
 	amount:  #Amount
-	cost?:   #Amount
+	cost?:   #Amount // Is this only for cost basis?
 	price?:  #Amount
+	// TODO interpolate total price and per-unit
+	// priceTotal?:
 }
 
 // YYYY-MM-DD [txn|Flag] [[Payee] Narration]

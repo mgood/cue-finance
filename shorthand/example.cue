@@ -25,3 +25,10 @@ tx: "2020-01-02": "Opening Balance for checking account": postings: [
 	// {"Equity:Opening-Balances":              _},
 	{"Equity:Opening-Balances": amount: USD: -40},
 ]
+
+tx: "2020-01-03": "Trade": postings: [
+	{"Equity:VWO": {
+		amount: VWO: 10,
+		price: USD: 2.3,
+}},
+]
