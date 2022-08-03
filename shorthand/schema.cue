@@ -52,15 +52,15 @@ commodity: [ID=_]: {
 #Amount: [Currency=_]: number
 
 // #AmountComputed: {
-	// In="in": #Amount
-	// let items = {
-	// 	for k,v in In {
-	// 		[k, v]
-	// 	}
-	// }
-	// _size:
-	// currency: items[0][0]
-	// units: items[0][0]
+// In="in": #Amount
+// let items = {
+//  for k,v in In {
+//   [k, v]
+//  }
+// }
+// _size:
+// currency: items[0][0]
+// units: items[0][0]
 // }
 
 // tuple?
@@ -88,32 +88,30 @@ commodity: [ID=_]: {
 // YYYY-MM-DD [txn|Flag] [[Payee] Narration] [Key: Value] ... [Flag] Account Amount [{Cost}] [@ Price] [Key: Value] ... [Flag] Account Amount [{Cost}] [@ Price] [Key: Value] ... ...
 
 #HasKey: {
-	key: string
-	In="in": _
-	out: list.Contains([ for k, _ in In {k}], key)
+	#key: string
+	#in:  _
+	list.Contains([ for k, _ in #in {k}], #key)
 }
 
 #GroupValuesFunc: {
-	In="in": [...]
-
-	let keys = [ for x in In {for k, _ in x {k}}]
+	#in: [...]
+	let keys = [ for x in #in {for k, _ in x {k}}]
 	let uniq = {for k in keys {"\(k)": true}}
-	out: {
-		for k, _ in uniq {
-			"\(k)": [ for x in In if (#HasKey & {key: k, in: x}).out {
+	for k, _ in uniq {
+		"\(k)": [
+			for x in #in
+			let has = #HasKey & {_, #key: k, #in: x}
+			if has {
 				x[k]
-			}]
-		}
+			},
+		]
 	}
 }
 
 #ValueSumFunc: {
-	In="in": _
-
-	out: {
-		for ck, cv in In {
-			"\(ck)": list.Sum(cv)
-		}
+	#in: _
+	for ck, cv in #in {
+		"\(ck)": list.Sum(cv)
 	}
 }
 
@@ -126,18 +124,18 @@ commodity: [ID=_]: {
 	// or another key that indicates a catch-all
 
 	accountTotals: {
-		for k, v in (#GroupValuesFunc & {in: postings}).out {
+		for k, v in #GroupValuesFunc & {#in: postings} {
 			let amounts = [ for x, y in v {y.amount}]
-			let grouped = (#GroupValuesFunc & {in: amounts}).out
-			let sums = (#ValueSumFunc & {in: grouped}).out
+			let grouped = #GroupValuesFunc & {#in: amounts}
+			let sums = #ValueSumFunc & {#in: grouped}
 			"\(k)": sums
 		}
 	}
-	totals: (#ValueSumFunc & {
-		in: (#GroupValuesFunc & {
-			in: [ for k, v in accountTotals {v}]
-		}).out
-	}).out
+	totals: #ValueSumFunc & {
+		#in: #GroupValuesFunc & {
+			#in: [ for k, v in accountTotals {v}]
+		}
+	}
 	// zeroBalance: {
 	//  for k,v in totals {
 	//   "\(k)": v & 0
