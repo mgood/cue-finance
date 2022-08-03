@@ -1,4 +1,6 @@
-#Date: string & =~"^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+import "time"
+
+#Date: string & time.Format(time.RFC3339Date)
 
 #Account: string
 // Check prefix? Assets, Liabilities, Income, Expenses and Equity
