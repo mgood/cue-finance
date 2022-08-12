@@ -264,11 +264,7 @@ runRecurse: (#RunningSum & {#in: [1, 2, 3]}).sum
 	#in: [...]
 
 	// #initial?: _
-	#funcFactory: {
-		#a:    _
-		#b:    _
-		#func: _
-	}
+	#funcFactory: {#a: _, #b: _, #func: _}
 
 	#funcs: [
 		for k, v in #in {
