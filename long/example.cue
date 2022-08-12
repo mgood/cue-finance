@@ -1,8 +1,12 @@
-import "time"
+import (
+	"list"
+	"time"
+)
 
 #Date: string & time.Format(time.RFC3339Date)
 
 #Account: string
+
 // Check prefix? Assets, Liabilities, Income, Expenses and Equity
 #Commodity: string & =~"^[A-Z]+$"
 
@@ -10,24 +14,26 @@ import "time"
 // https://beancount.github.io/docs/beancount_design_doc.html#balancing-postings
 
 #Amount: {
-	units:        float
+	units:     float
 	commodity: #Commodity
 }
+
 #Cost: {
 	#Amount
-	date?: #Date
+	date?:  #Date
 	label?: string
 }
 // CostSpec = (Number-per-unit, Number-total, Currency, Date, Label, Merge)
 
 #Posting: {
 	account: #Account
+	date:    #Date
 	amount:  #Amount
 
-	cost:   #Cost | *null
+	cost: #Cost | *null
 	// or CostSpec, which booking process resolves to a cost
 
-	price:  #Amount | *null
+	price: #Amount | *null
 	// // TODO interpolate total price and per-unit
 	// // priceTotal?:
 }
@@ -38,25 +44,107 @@ import "time"
 	weight: [
 		if W.cost != null {
 			{
-				units: W.amount.units * W.cost.units
+				units:     W.amount.units * W.cost.units
 				commodity: W.cost.commodity
 			}
-		}
+		},
 		if W.price != null {
 			{
-				units: W.amount.units / W.price.units
+				units:     W.amount.units / W.price.units
 				commodity: W.price.commodity
 			}
-		}
-		W.amount
+		},
+		W.amount,
 	][0]
 }
 
 #Transaction: {
-	date:      #Date
+	date: #Date
+	let txDate = date
 	narration: string
-	postings: [...#WeightedPosting]
+	postings: [...#WeightedPosting & {date: txDate}]
 }
+
+#AmountMap: [#Commodity]: float
+
+#AmountToMap: #AmountMap
+#AmountToMap: {
+	#in:                #Amount
+	"\(#in.commodity)": #in.units
+}
+
+#MapAmounts: {
+	#in: #AmountMap
+	[
+		for k, v in #in
+		if v != 0 {
+			{units: v, commodity: k}
+		},
+	]
+}
+
+// TODO try `if a.foo != _|_ {`
+#HasKey: {
+	#key: string
+	#in: [string]: _
+	list.Contains([ for k, _ in #in {k}], #key)
+}
+
+#GroupValues: {
+	#in: [...{[string]: _}]
+	let keys = [ for x in #in {for k, _ in x {k}}]
+	let uniq = {for k in keys {"\(k)": true}}
+	for k, _ in uniq {
+		"\(k)": [
+			for x in #in
+			let has = #HasKey & {_, #key: k, #in: x}
+			if has {
+				x[k]
+			},
+		]
+	}
+}
+
+#MapSum: M={
+	#in: [...{[string]: number}]
+	let grouped = #GroupValues & {#in: M.#in}
+	for ck, cv in grouped {
+		// TODO better way force cast to float?
+		"\(ck)": list.Sum(cv) + 0.0
+	}
+}
+
+#SumAmounts: {
+	#in: [...#Amount]
+	let maps = [ for a in #in {#AmountToMap & {#in: a}}]
+	let sum = #MapSum & {#in: maps}
+	let amounts = #MapAmounts & {_, #in: sum}
+
+	// need [] syntax for it to recognize this as a scalar?
+	[ for x in amounts {x}]
+}
+
+s: #SumAmounts & {_, #in: [
+	{units: 50.0, commodity: "HOOL"}, {units: 20.0, commodity: "HOOL"},
+	{units: 5.0, commodity:  "USD"}, {units:  -5.0, commodity: "USD"},
+]}
+
+// #RunningSum: {
+//   V=#n: number | *0
+//   fn: {
+//     A=#arg: [...number]
+//     if len(A) > 0 {
+//       let Next = V + A[0]
+//       let tail = ((#RunningSum & {#n: Next}).fn & {_, #arg: A[1:]})
+//       [V] + tail
+//     }
+//     if len(A) == 0 {
+//       [V]
+//     }
+//   }
+// }
+
+// sum1: (#RunningSum.fn & {_, #arg: [1, 2, 3, 4]})
 
 tx: #Transaction & {
 	date:      "2020-01-01"
@@ -64,11 +152,11 @@ tx: #Transaction & {
 	postings: [
 		{
 			account: "Assets:US:BofA:Checking"
-			amount: {units: 300., commodity: "USD"}
+			amount: {units: 300.0, commodity: "USD"}
 		},
 		{
 			account: "Equity:Opening-Balances"
-			amount: {units: -300., commodity: "USD"}
+			amount: {units: -300.0, commodity: "USD"}
 		},
 	]
 }
@@ -84,31 +172,31 @@ tx2: #Transaction & {
 	// *
 	narration: "Wired money to foreign account"
 	postings: [
-		{account: "Assets:Investment:HOOL", amount: {units: -35350, commodity: "CAD"}, price: {units: 1.01, commodity: "USD"}},  // -35000 USD (2)
-		{account: "Assets:Investment:Cash", amount: {units: 35000, commodity: "USD"}},              //  35000 USD (3)
+		{account: "Assets:Investment:HOOL", amount: {units: -35350, commodity: "CAD"}, price: {units: 1.01, commodity: "USD"}}, // -35000 USD (2)
+		{account: "Assets:Investment:Cash", amount: {units: 35000, commodity:  "USD"}},               //  35000 USD (3)
 	]
-//                                                           ;;------------------
-//                                                           ;;      0 USD
+	//                                                           ;;------------------
+	//                                                           ;;      0 USD
 }
 
 #CAD: {
 	#Amount
-	_n: float
-	units: _n
+	_n:        float
+	units:     _n
 	commodity: "CAD"
 }
 
 simplePosting: #WeightedPosting & {
 	account: "Assets:Investment:HOOL"
-	amount: {units: -35., commodity: "CAD"}
-	weight: {units: -35., commodity: "CAD"}
+	amount: {units: -35.0, commodity: "CAD"}
+	weight: {units: -35.0, commodity: "CAD"}
 }
 
 pricedPosting: #WeightedPosting & {
 	account: "Assets:Investment:HOOL"
-	amount: {units: -35350., commodity: "CAD"}
+	amount: {units: -35350.0, commodity: "CAD"}
 	price: {units: 1.01, commodity: "USD"}
-	weight: {units: -35000., commodity: "USD"}
+	weight: {units: -35000.0, commodity: "USD"}
 }
 
 // 2013-07-22 * "Bought some investment"
@@ -117,11 +205,120 @@ pricedPosting: #WeightedPosting & {
 //                                                           ;;------------------
 //                                                           ;;      0 USD
 
-
 //   Assets:Investment:HOOL     50 HOOL {700 USD}            ;;  35000 USD (1)
 costPosting: #WeightedPosting & {
 	account: "Assets:Investment:HOOL"
-	amount: {units: 50., commodity: "HOOL"}
-	cost: {units: 700., commodity: "USD"}
-	weight: {units: 35000., commodity: "USD"}
+	amount: {units: 50.0, commodity: "HOOL"}
+	cost: {units: 700.0, commodity: "USD"}
+	weight: {units: 35000.0, commodity: "USD"}
 }
+
+// balances - do list assertions help verifying adjacent entries?
+
+// for accounts with cost-basis, need that to figure out which lot to reduce
+// for other accounts, just need to reduce the total balance
+
+// should it extract all postings to group by account/date?
+// then extrapolate the list of balances for dates?
+
+// Recursion, see:
+// https://github.com/hofstadter-io/cuetils
+// https://cuetorials.com/deep-dives/recursion/
+
+#RecurseN: {
+	#maxiter: uint | *1
+	#funcFactory: {
+		#next: _
+		#func: _
+	}
+
+	for k, v in list.Range(0, #maxiter, 1) {
+		#funcs: "\(k)": (#funcFactory & {#next: #funcs["\(k+1)"]}).#func
+	}
+	#funcs: "\(#maxiter)": null
+
+	#funcs["0"]
+}
+
+#runningSumF: {
+	#next: _
+	#func: {
+		#in:   _
+		#prev: number | *0
+		sum: {
+			if len(#in) == 0 {[]}
+			if len(#in) > 0 {
+				let head = #in[0]
+				let tail = #in[1:]
+				let n = head + #prev
+				[n] + (#next & {#in: tail, #prev: n}).sum
+			}
+		}
+	}
+}
+
+#RunningSum: #RecurseN & {#funcFactory: #runningSumF}
+
+run: (#RunningSum & {#in: [1, 2, 3]}).sum
+
+#RunSum2: {
+	#in: [...]
+	#funcFactory: {
+		#prev: _
+		#func: _
+	}
+	#funcFactory: {
+		#prev: _
+		#n:    _
+		#func: {
+			// let prev = #prev.sum
+			if #prev == null {#n}
+			if #prev != null {#n + #prev}
+		}
+	}
+
+	for k, v in #in {
+		#funcs: "\(k)": (#funcFactory & {#prev: #funcs["\(k-1)"], #n: v}).#func
+	}
+	#funcs: "-1": null
+
+	sum: [ for k, _ in list.Range(0, len(#in), 1) {#funcs["\(k)"]}]
+}
+
+run2: (#RunSum2 & {#in: [1, 2, 3]}).sum
+
+#Accumulate: {
+	#in: [...]
+	#initial: _ | *null
+	#funcFactory: {
+		#a:    _
+		#b:    _
+		#func: _
+	}
+
+	#funcs: [
+		for k, v in #in {
+			if k == 0 {
+				(#funcFactory & {#a: #initial, #b: v}).#func
+			}
+			if k > 0 {
+				(#funcFactory & {#a: #funcs[k-1], #b: v}).#func
+			}
+		},
+	]
+	#funcs
+}
+
+#RunSum3: #Accumulate & {
+	_
+	#funcFactory: {
+		#a: _
+		#b: _
+		#func: {
+			if #a == null {#b}
+			if #a != null {x: #a.x + #b.x}
+		}
+	}
+}
+
+run3: (#RunSum3 & {_, #in: [{x: 1}, {x: 2}, {x: 3}]})
