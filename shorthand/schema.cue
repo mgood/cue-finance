@@ -89,12 +89,12 @@ commodity: [ID=_]: {
 
 #HasKey: {
 	#key: string
-	#in:  _
+	#in:  [string]: _
 	list.Contains([ for k, _ in #in {k}], #key)
 }
 
 #GroupValuesFunc: {
-	#in: [...]
+	#in: [...{[string]: _}]
 	let keys = [ for x in #in {for k, _ in x {k}}]
 	let uniq = {for k in keys {"\(k)": true}}
 	for k, _ in uniq {
@@ -109,7 +109,7 @@ commodity: [ID=_]: {
 }
 
 #ValueSumFunc: {
-	#in: _
+	#in: [string]: [...number]
 	for ck, cv in #in {
 		"\(ck)": list.Sum(cv)
 	}
