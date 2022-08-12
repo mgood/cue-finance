@@ -291,3 +291,30 @@ runEmpty: []
 
 runInitial: (#RunSum & {_, #in: [{x: 1}, {x: 2}, {x: 3}], #initial: {x: 10}})
 runInitial: [{x: 11}, {x: 13}, {x: 16}]
+
+#Accumulate2: {
+	#in: [...]
+	#funcFactory: {#a: _, #b: _, #func: _}
+
+	#funcs: [
+		for k, v in #in {
+			if k == 0 {
+				v
+			}
+			if k > 0 {
+				// XXX this variable makes the run time explode around 18 items
+				// without it, up to ~700 took 10s
+				// let prior = #funcs[k-1]
+				(#funcFactory & {#a: #funcs[k-1], #b: v}).#func
+			}
+		},
+	]
+	#funcs
+}
+
+
+#RunSumSimple: #Accumulate2 & {_, #funcFactory: {
+	#a: _, #b: _, #func: {#a + #b}
+}}
+
+runBig: (#RunSumSimple & {_, #in: list.Range(0, 700, 1)})
