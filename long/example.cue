@@ -225,7 +225,7 @@ costPosting: #WeightedPosting & {
 // https://cuetorials.com/deep-dives/recursion/
 
 #RecurseN: {
-	#maxiter: uint | *1
+	#maxiter: uint | *100
 	#funcFactory: {
 		#next: _
 		#func: _
@@ -258,37 +258,11 @@ costPosting: #WeightedPosting & {
 
 #RunningSum: #RecurseN & {#funcFactory: #runningSumF}
 
-run: (#RunningSum & {#in: [1, 2, 3]}).sum
-
-#RunSum2: {
-	#in: [...]
-	#funcFactory: {
-		#prev: _
-		#func: _
-	}
-	#funcFactory: {
-		#prev: _
-		#n:    _
-		#func: {
-			// let prev = #prev.sum
-			if #prev == null {#n}
-			if #prev != null {#n + #prev}
-		}
-	}
-
-	for k, v in #in {
-		#funcs: "\(k)": (#funcFactory & {#prev: #funcs["\(k-1)"], #n: v}).#func
-	}
-	#funcs: "-1": null
-
-	sum: [ for k, _ in list.Range(0, len(#in), 1) {#funcs["\(k)"]}]
-}
-
-run2: (#RunSum2 & {#in: [1, 2, 3]}).sum
+runRecurse: (#RunningSum & {#in: [1, 2, 3]}).sum
 
 #Accumulate: {
 	#in: [...]
-	#initial: _ | *null
+	#initial?: _
 	#funcFactory: {
 		#a:    _
 		#b:    _
@@ -297,27 +271,20 @@ run2: (#RunSum2 & {#in: [1, 2, 3]}).sum
 
 	#funcs: [
 		for k, v in #in {
-			if k == 0 {
-				(#funcFactory & {#a: #initial, #b: v}).#func
+			let prior = #funcs[k-1] | #initial
+			if prior == _|_ {
+				v
 			}
-			if k > 0 {
-				(#funcFactory & {#a: #funcs[k-1], #b: v}).#func
+			if prior != _|_ {
+				(#funcFactory & {#a: prior, #b: v}).#func
 			}
 		},
 	]
 	#funcs
 }
 
-#RunSum3: #Accumulate & {
-	_
-	#funcFactory: {
-		#a: _
-		#b: _
-		#func: {
-			if #a == null {#b}
-			if #a != null {x: #a.x + #b.x}
-		}
-	}
-}
+#RunSum: #Accumulate & {_, #funcFactory: {
+	#a: _, #b: _, #func: {x: #a.x + #b.x}
+}}
 
-run3: (#RunSum3 & {_, #in: [{x: 1}, {x: 2}, {x: 3}]})
+run: (#RunSum & {_, #in: [{x: 1}, {x: 2}, {x: 3}]})
