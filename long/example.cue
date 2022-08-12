@@ -84,24 +84,23 @@ import (
 }
 
 // TODO try `if a.foo != _|_ {`
-#HasKey: {
-	#key: string
-	#in: [string]: _
-	list.Contains([ for k, _ in #in {k}], #key)
-}
+// #HasKey: {
+//  #key: string
+//  #in: [string]: _
+//  if #in[#key] == _|_ {
+//   false
+//  }
+//  if #in[#key] != _|_ {
+//   true
+//  }
+// }
 
 #GroupValues: {
 	#in: [...{[string]: _}]
 	let keys = [ for x in #in {for k, _ in x {k}}]
 	let uniq = {for k in keys {"\(k)": true}}
 	for k, _ in uniq {
-		"\(k)": [
-			for x in #in
-			let has = #HasKey & {_, #key: k, #in: x}
-			if has {
-				x[k]
-			},
-		]
+		"\(k)": [ for x in #in if x[k] != _|_ {x[k]}]
 	}
 }
 
