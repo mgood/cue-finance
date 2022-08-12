@@ -262,7 +262,8 @@ runRecurse: (#RunningSum & {#in: [1, 2, 3]}).sum
 
 #Accumulate: {
 	#in: [...]
-	#initial?: _
+
+	// #initial?: _
 	#funcFactory: {
 		#a:    _
 		#b:    _
@@ -271,7 +272,9 @@ runRecurse: (#RunningSum & {#in: [1, 2, 3]}).sum
 
 	#funcs: [
 		for k, v in #in {
-			let prior = #funcs[k-1] | #initial
+			// TODO setting #initial this way is only added to the first element, but
+			// subsequent elements returned {} instead
+			let prior = #funcs[k-1] // | #initial
 			if prior == _|_ {
 				v
 			}
