@@ -3,6 +3,11 @@ import (
 	"time"
 )
 
+// can we chunk transactions to speed up processing? seems like Cue is currently
+// too slow to be reasonable for big files however, if we can roll up
+// transactions into chunks, then transfer the final balance in as the opening
+// balance we can keep making assertions before combining into the final result
+
 #Date: string & time.Format(time.RFC3339Date)
 
 #Account: string

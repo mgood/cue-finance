@@ -24,13 +24,66 @@ import "list"
 	#a: _, #b: _, #func: {#a + #b}
 }}
 
+#GroupValues: {
+	#in: [...] //{[string]: _}]
+	let keys = [ for x in #in {for k, _ in x {k}}]
+	let uniq = {for k in keys {"\(k)": true}}
+	for k, _ in uniq {
+		"\(k)": [ for x in #in if x[k] != _|_ {x[k]}]
+	}
+}
+
+#MapSum: M={
+	#in: [...{[string]: number}]
+	let grouped = #GroupValues & {#in: M.#in}
+	for ck, cv in grouped {
+		// TODO better way force cast to float?
+		"\(ck)": list.Sum(cv) + 0.0
+	}
+}
+
+#LeftOnly: {
+	#a: _, #b: _
+	for k, v in #a {
+		if #b[k] == _|_ {
+			"\(k)": v
+		}
+	}
+}
+
+#RightOnly: {
+	#a: _, #b: _
+	for k, v in #b {
+		if #a[k] == _|_ {
+			"\(k)": v
+		}
+	}
+}
+
+#MapSum2: {
+	#a: _, #b: _
+	#LeftOnly
+	#RightOnly
+	for k, v in #a {
+		if #b[k] != _|_ {
+			"\(k)": v + #b[k]
+		}
+	}
+}
+
+m: #MapSum2 & {#a: {x: 1, y: 2}, #b: {y: 3, z: 4}}
+
 #RunSumSimple: {
 	#in: [...]
 	out: [ for k, v in #in {
 		if k == 0 {v}
-		if k > 0 {v + out[k-1]}
+		if k > 0 {
+			#MapSum2 & {#a: v, #b: out[k-1]}
+		}
 	}]
 }
-big:    list.Range(0, 1000, 1)
+big: [ for v in list.Range(0, 10, 1) {x: v}]
 runBig: (#RunSumSimple & {_, #in: big}).out
 out:    runBig[len(runBig)-10:]
+
+g: #GroupValues & {#in: big}

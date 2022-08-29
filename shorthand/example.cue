@@ -14,6 +14,8 @@ account: "Liabilities:AccountsPayable": open: "1980-05-12"
 account: "Assets:US:BofA:Checking": open:     "2020-01-01"
 account: "Assets:US:BofA:Checking": balance: "2020-01-02": USD: 2983.52
 
+account: Assets: US: BofA: open: "2020-01-01"
+
 tx: "2020-01-01": "Opening Balance for checking account": postings: [
 	{"Assets:US:BofA:Checking": amount: USD: 2983.52},
 	{"Equity:Opening-Balances": amount: USD: -2983.52},
