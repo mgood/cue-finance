@@ -69,14 +69,14 @@ import (
 }
 
 #NextDay: {
-	#in: _
+	#in: types.#Date
 	#FormatDate: {
-		#in: {year: int, month: int, day: int, ...}
+		#in: {year: int, month: int, day: int}
 		out: time.FormatString(time.RFC3339Date, time.Parse("2006-1-2", "\(#in.year)-\(#in.month)-\(#in.day)"))
 	}
 	#parsed: {year: int, month: int, day: int} & time.Split(time.Parse(time.RFC3339Date, #in))
 	out:     [
-			if (#FormatDate & {#in: {year: #parsed.year, month: #parsed.month, day: #parsed.day + 1}}).out != _|_ {
+		if (#FormatDate & {#in: {year: #parsed.year, month: #parsed.month, day: #parsed.day + 1}}).out != _|_ {
 			(#FormatDate & {#in: {year: #parsed.year, month: #parsed.month, day: #parsed.day + 1}}).out
 		},
 		if (#FormatDate & {#in: {year: #parsed.year, month: #parsed.month + 1, day: 1}}).out != _|_ {
@@ -122,7 +122,7 @@ import (
 	txs=#in: [...types.#Transaction]
 	out: {
 		for acct, acctPostings in (#PostingsBy & {#key: "account", #in:
-			list.FlattenN([ for tx in txs {tx.postings}], 1)
+								list.FlattenN([ for tx in txs {tx.postings}], 1)
 		}).out {
 			"\(acct)": (#BalancesByDate & {#in: acctPostings}).out
 		}
