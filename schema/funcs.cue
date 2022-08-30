@@ -76,7 +76,7 @@ import (
 	}
 	#parsed: {year: int, month: int, day: int} & time.Split(time.Parse(time.RFC3339Date, #in))
 	out:     [
-		if (#FormatDate & {#in: {year: #parsed.year, month: #parsed.month, day: #parsed.day + 1}}).out != _|_ {
+			if (#FormatDate & {#in: {year: #parsed.year, month: #parsed.month, day: #parsed.day + 1}}).out != _|_ {
 			(#FormatDate & {#in: {year: #parsed.year, month: #parsed.month, day: #parsed.day + 1}}).out
 		},
 		if (#FormatDate & {#in: {year: #parsed.year, month: #parsed.month + 1, day: 1}}).out != _|_ {

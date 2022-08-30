@@ -46,7 +46,7 @@ import (
 }
 
 #Transaction: {
-	date: #Date
+	date:      #Date
 	narration: string
 	postings: [...#Posting]
 	...
