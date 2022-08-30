@@ -31,12 +31,7 @@ import (
 
 #Posting: {
 	account: #Account
-	// date:    #Date
 	amount:  #Amount
-
-	// TODO why does it say these fields aren't allowed unless they're specified here?
-	weight: _
-	date: _
 
 	cost: #Cost | *null
 	// or CostSpec, which booking process resolves to a cost
@@ -46,10 +41,13 @@ import (
 	price: #Amount | *null
 	// TODO interpolate total price and per-unit
 	// priceTotal?:
+
+	...
 }
 
 #Transaction: {
 	date: #Date
 	narration: string
 	postings: [...#Posting]
+	...
 }
