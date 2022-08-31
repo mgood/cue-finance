@@ -7,7 +7,7 @@ import (
 )
 
 #GroupValues: {
-	#in: [...] //{[string]: _}]
+	#in: [...{[string]: _}]
 	let keys = [ for x in #in {for k, _ in x {k}}]
 	let uniq = {for k in keys {"\(k)": true}}
 	for k, _ in uniq {
