@@ -1,12 +1,20 @@
-https://cuelang.org/docs/usecases/generate/
+# Cue finance experiments
 
-https://beancount.github.io/docs/beancount_language_syntax.html
+An experiment in building a Cue schema to validate financial ledgers.
 
-Could generate types from Go code?
+The structure is inspired by
+[Beancount](https://beancount.github.io/docs/beancount_language_syntax.html) in
+order to allow for converting between the two formats.
 
-Convert between beancount, ledger formats to allow interaction with their tooling
+Cue is interesting since it allows expressing the rules directly in the same
+language as the ledger itself. This also allows users to extend the
+functionality in Cue, rather than writing plugins. So they could express
+additional constraints on transactions matching specific criteria, or add rules
+that reduce repetition. E.g. a rule could describe how to split shared expenses
+between other accounts.
 
-beancount:
-use `cue` to export JSON, then can convert in Python
+## Limitations
 
-what about beancount -> Cue?
+The Cue solver seems to start to slow down quite quickly computing some of these
+interpolations as the input size grows. I've tried optimizing a few of the core
+functions, but it's not clear if this is scalable at this point to real usage.
