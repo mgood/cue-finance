@@ -26,6 +26,7 @@ import "github.com/mgood/cue-finance/schema:types"
 
 #Transaction: Tx={
 	types.#Transaction
+
 	postings: [...#Posting & {date: Tx.date}]
 	// TODO compute total weights for the postings
 }
