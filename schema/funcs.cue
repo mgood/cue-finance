@@ -22,22 +22,11 @@ import (
 	}
 }
 
-#LeftOnly: {
-	#a: _, #b: _
-	for k, v in #a {
-		if #b[k] == _|_ {
-			"\(k)": v
-		}
-	}
-}
-
-#RightOnly: {
-	#a: _, #b: _
-	for k, v in #b {
-		if #a[k] == _|_ {
-			"\(k)": v
-		}
-	}
+#MapToAmounts: {
+	#in: _
+	out: [
+		for k, v in #in {units: v, commodity: k},
+	]
 }
 
 #MapSum: M={
@@ -48,24 +37,6 @@ import (
 			"\(ck)": list.Sum(cv) + 0.0
 		}
 	}
-}
-
-#MapSum2: {
-	#a: _, #b: _
-	#LeftOnly
-	#RightOnly
-	for k, v in #a {
-		if #b[k] != _|_ {
-			"\(k)": v + #b[k]
-		}
-	}
-}
-
-#MapToAmounts: {
-	#in: _
-	out: [
-		for k, v in #in {units: v, commodity: k},
-	]
 }
 
 #NextDay: {
